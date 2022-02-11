@@ -1,47 +1,54 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Discount.API.Entities;
+using Discount.API.Repositories;
+using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace Discount.API.Controllers
 {
-    [Route("api/v1/[controller]")]
+
     [ApiController]
+    [Route("api/v1/[controller]")]
     public class DiscountController : ControllerBase
     {
-        // GET: api/<DiscountController>
-        [HttpGet]
-        public IEnumerable<string> Get()
+        private readonly IDiscountRepository _repository;
+
+        public DiscountController(IDiscountRepository repository)
         {
-            return new string[] { "value1", "value2" };
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
-        // GET api/<DiscountController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpGet("{productName}", Name = "GetDiscount")]
+        [ProducesResponseType(typeof(Coupon), (int)HttpStatusCode.OK)]
+        public async Task<ActionResult<Coupon>> GetDiscount(string productName)
         {
-            return "value";
+            var coupon = await _repository.GetDiscount(productName);
+            return Ok(coupon);
         }
 
-        // POST api/<DiscountController>
         [HttpPost]
-        public void Post([FromBody] string value)
+        [ProducesResponseType(typeof(Coupon), (int)HttpStatusCode.OK)]
+        public async Task<ActionResult<Coupon>> CreateDiscount([FromBody] Coupon coupon)
         {
+            await _repository.CreateDiscount(coupon);
+            return CreatedAtRoute("GetDiscount", new { productName = coupon.ProductName }, coupon);
         }
 
-        // PUT api/<DiscountController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        [HttpPut]
+        [ProducesResponseType(typeof(Coupon), (int)HttpStatusCode.OK)]
+        public async Task<ActionResult<Coupon>> UpdateDiscount([FromBody] Coupon coupon)
         {
+            return Ok(await _repository.UpdateDiscount(coupon));
         }
 
-        // DELETE api/<DiscountController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
+        [HttpDelete("{productName}", Name = "DeleteDiscount")]
+        [ProducesResponseType(typeof(void), (int)HttpStatusCode.OK)]
+        public async Task<ActionResult<bool>> DeleteDiscount(string productName)
         {
+            return Ok(await _repository.DeleteDiscount(productName));
         }
     }
 }
